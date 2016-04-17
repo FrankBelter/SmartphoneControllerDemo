@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	<title>Controller Page</title>
+	<style type="text/css">
+		button {
+			padding-top: 20px;
+		}
+	</style>
+	<script src="/js/sockjs-0.3.4.js"></script>
+	<script src="/js/stomp.js"></script>
+	<script type="text/javascript">
+			
+		var connected = false;
+		var stompClient = null;
+		var orientationValues;
+		
+		function setConnected(connected) {
+			document.getElementById('connect').disabled = connected;
+			document.getElementById('disconnect').disabled = !connected;
+		
+			this.connected = connected;
+		}
+		
+		function connect() {
+			var socket = new SockJS('/controllerOrientation');
+			stompClient = Stomp.over(socket);
+			stompClient.connect({}, function(frame) {
+				setConnected(true);
+			});
+		}
+		
+		function disconnect() {
+			if (stompClient != null) {
+				stompClient.disconnect();
+			}
+			setConnected(false);
+		}
+		
+		window.addEventListener("deviceorientation", sendOrientation);
+		
+		function sendOrientation(evt) {
+			if (!this.connected) {
+				return;
+			}
+			
+			orientationValues = evt.beta + "," + evt.gamma;
+			stompClient.send("/app/controllerOrientation", {}, orientationValues);
+		}
+		
+		connect();
+	</script>
+	</head>
+	<body>
+		<noscript>
+			<h2 style="color: #ff0000">Seems your browser doesn't support
+				Javascript! Websocket relies on Javascript being enabled. Please
+				enable Javascript and reload this page!</h2>
+		</noscript>
+		<div>
+			<button id="connect" onclick="connect();">Connect</button>
+			<button id="disconnect" disabled="disabled" onclick="disconnect();">Disconnect</button>
+		</div>
+	</body>
+</html>
